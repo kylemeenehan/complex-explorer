@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { drawScene, type ProgramInfo } from '../utils/webgl/draw-scene';
 import { initBuffers } from '../utils/webgl/init-buffers';
@@ -15,18 +15,38 @@ type Vec = {
 const StyledCanvas = styled.canvas`
   width: 100%;
   height: 100%;
+  cursor: grab;
+  &:active {
+    cursor: grabbing;
+  }
 `;
 
 const maxIterations = 900;
 const origSize: Vec = { x: 3, y: 3 };
-const size: Vec = { x: origSize.x, y: origSize.y };
-const originPosition: Vec = { x: 0, y: 0 };
-const pos: Vec = { x: originPosition.x, y: originPosition.y };
 
 export function MandlebrotSetCanvas() {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const [size, setSize] = useState<Vec>({ x: origSize.x, y: origSize.y });
+  const [pos, setPos] = useState<Vec>({ x: 0, y: 0 });
 
-  function plotWebGL() {
+  // Track mouse/touch for panning
+  const isDragging = useRef(false);
+  const lastMousePos = useRef({ x: 0, y: 0 });
+  const touchDistance = useRef(0);
+  
+  // Keep refs to current state to avoid closure issues
+  const sizeRef = useRef(size);
+  const posRef = useRef(pos);
+  
+  useEffect(() => {
+    sizeRef.current = size;
+  }, [size]);
+  
+  useEffect(() => {
+    posRef.current = pos;
+  }, [pos]);
+
+  const plotWebGL = useCallback(() => {
     console.time('plotWebGL');
     if (!canvas.current) {
       return;
@@ -126,12 +146,129 @@ export function MandlebrotSetCanvas() {
     drawScene(gl, programInfo, buffers);
 
     console.timeEnd('plotWebGL');
-  }
+  }, [size, pos]);
 
-  // Render whenever mouseC changes (after being updated by mouse move)
+  // Handle mouse wheel zoom
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9; // Zoom out on scroll down, zoom in on scroll up
+    setSize((prevSize) => ({
+      x: prevSize.x * zoomFactor,
+      y: prevSize.y * zoomFactor,
+    }));
+  }, []);
+
+  // Handle mouse drag for panning
+  const handleMouseDown = useCallback((e: MouseEvent) => {
+    isDragging.current = true;
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging.current || !canvas.current) return;
+
+    const rect = canvas.current.getBoundingClientRect();
+    const deltaX = e.clientX - lastMousePos.current.x;
+    const deltaY = e.clientY - lastMousePos.current.y;
+
+    // Convert pixel movement to complex plane coordinates
+    const complexDeltaX = -(deltaX / rect.width) * sizeRef.current.x;
+    const complexDeltaY = (deltaY / rect.height) * sizeRef.current.y;
+
+    setPos((prevPos) => ({
+      x: prevPos.x + complexDeltaX,
+      y: prevPos.y + complexDeltaY,
+    }));
+
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  // Calculate distance between two touch points
+  const getTouchDistance = useCallback((touch1: Touch, touch2: Touch) => {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }, []);
+
+  // Handle touch pinch to zoom
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    if (e.touches.length === 2) {
+      touchDistance.current = getTouchDistance(e.touches[0], e.touches[1]);
+    } else if (e.touches.length === 1) {
+      isDragging.current = true;
+      lastMousePos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, [getTouchDistance]);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    e.preventDefault();
+
+    if (e.touches.length === 2) {
+      const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      const zoomFactor = touchDistance.current / currentDistance;
+      touchDistance.current = currentDistance;
+
+      setSize((prevSize) => ({
+        x: prevSize.x * zoomFactor,
+        y: prevSize.y * zoomFactor,
+      }));
+    } else if (e.touches.length === 1 && isDragging.current && canvas.current) {
+      // Single finger drag to pan
+      const rect = canvas.current.getBoundingClientRect();
+      const deltaX = e.touches[0].clientX - lastMousePos.current.x;
+      const deltaY = e.touches[0].clientY - lastMousePos.current.y;
+
+      const complexDeltaX = -(deltaX / rect.width) * sizeRef.current.x;
+      const complexDeltaY = (deltaY / rect.height) * sizeRef.current.y;
+
+      setPos((prevPos) => ({
+        x: prevPos.x + complexDeltaX,
+        y: prevPos.y + complexDeltaY,
+      }));
+
+      lastMousePos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, [getTouchDistance]);
+
+  const handleTouchEnd = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  // Render whenever size or pos changes
   useEffect(() => {
     plotWebGL();
-  }, []);
+  }, [plotWebGL]);
+
+  // Setup event listeners
+  useEffect(() => {
+    const canvasElement = canvas.current;
+    if (!canvasElement) return;
+
+    // Mouse events
+    canvasElement.addEventListener('wheel', handleWheel as EventListener, { passive: false });
+    canvasElement.addEventListener('mousedown', handleMouseDown as EventListener);
+    document.addEventListener('mousemove', handleMouseMove as EventListener);
+    document.addEventListener('mouseup', handleMouseUp as EventListener);
+
+    // Touch events
+    canvasElement.addEventListener('touchstart', handleTouchStart as EventListener, { passive: false });
+    canvasElement.addEventListener('touchmove', handleTouchMove as EventListener, { passive: false });
+    canvasElement.addEventListener('touchend', handleTouchEnd as EventListener);
+
+    return () => {
+      canvasElement.removeEventListener('wheel', handleWheel as EventListener);
+      canvasElement.removeEventListener('mousedown', handleMouseDown as EventListener);
+      document.removeEventListener('mousemove', handleMouseMove as EventListener);
+      document.removeEventListener('mouseup', handleMouseUp as EventListener);
+      canvasElement.removeEventListener('touchstart', handleTouchStart as EventListener);
+      canvasElement.removeEventListener('touchmove', handleTouchMove as EventListener);
+      canvasElement.removeEventListener('touchend', handleTouchEnd as EventListener);
+    };
+  }, [handleWheel, handleMouseDown, handleMouseMove, handleMouseUp, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   return (
     <>

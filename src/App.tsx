@@ -5,6 +5,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { darkTheme } from './theme';
 import { JuliaSet } from './julia/JuliaSet';
+import { MandlebrotSet } from './mandlebrot/MandlebrotSet';
 
 const router = createBrowserRouter([
   {
@@ -16,8 +17,8 @@ const router = createBrowserRouter([
     element: <JuliaSet />,
   },
   {
-    path: '/mandelbrot',
-    element: <div>Mandlebrot</div>,
+    path: '/mandlebrot',
+    element: <MandlebrotSet />,
   },
 ]);
 

@@ -44,7 +44,7 @@ export function MandlebrotSet() {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            Julia Set
+            Mandlebrot Set
           </Typography>
         </Toolbar>
       </AppBar>

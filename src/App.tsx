@@ -1,6 +1,10 @@
 import './App.css';
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { darkTheme } from './theme';
+import { JuliaSet } from './julia/JuliaSet';
 
 const router = createBrowserRouter([
   {
@@ -9,7 +13,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/julia',
-    element: <div>Julia set</div>,
+    element: <JuliaSet />,
   },
   {
     path: '/mandelbrot',
@@ -18,7 +22,12 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  );
 }
 
 export default App;

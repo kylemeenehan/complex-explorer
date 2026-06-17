@@ -111,10 +111,15 @@ export function JuliaSetCanvas({
     gl.uniform1f(programInfo.uniformLocations.canvasHeight, height);
 
     // Pass Julia set parameters to shader
+    // Adjust size to maintain correct aspect ratio: if canvas is wider, stretch X; if taller, stretch Y
+    const aspectRatio = width / height;
+    const adjustedSizeX = size.x * Math.max(aspectRatio, 1);
+    const adjustedSizeY = size.y * Math.max(1 / aspectRatio, 1);
+
     gl.uniform1f(programInfo.uniformLocations.posX, pos.x);
     gl.uniform1f(programInfo.uniformLocations.posY, pos.y);
-    gl.uniform1f(programInfo.uniformLocations.sizeX, size.x);
-    gl.uniform1f(programInfo.uniformLocations.sizeY, size.y);
+    gl.uniform1f(programInfo.uniformLocations.sizeX, adjustedSizeX);
+    gl.uniform1f(programInfo.uniformLocations.sizeY, adjustedSizeY);
 
     // Pass Julia constant c (use mouseC if available, otherwise use default)
     gl.uniform1f(programInfo.uniformLocations.cx, mouseC.x);

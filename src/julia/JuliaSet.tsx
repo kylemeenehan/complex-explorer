@@ -168,7 +168,7 @@ export function JuliaSet() {
         <DrawerHeader />
         <JuliaSetCanvas mouseC={mouseC} onMouseMove={handleMouseMove} />
         <CDisplay>
-          C is ({mouseC.x}, {mouseC.y})
+          c = {mouseC.x} {mouseC.y < 0 ? '-' : '+'} {Math.abs(mouseC.y)}i
         </CDisplay>
       </Main>
     </Box>

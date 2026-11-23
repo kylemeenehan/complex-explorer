@@ -214,7 +214,7 @@ export function ControlPanel() {
           format={String}
           parse={(t) => {
             const n = Number(t);
-            return Number.isFinite(n) && n >= 2 && n <= 1e10 ? n : null;
+            return Number.isFinite(n) && n >= 2 && n <= 1e8 ? n : null;
           }}
           onCommit={(bailout) => updateSettings({ bailout })}
         />

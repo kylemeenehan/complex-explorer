@@ -19,7 +19,10 @@ export function ProbeCard({
   top?: number;
   defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  // Start collapsed on phones, where the card would cover much of the view.
+  const [open, setOpen] = useState(
+    () => defaultOpen && window.innerWidth >= 700,
+  );
   return (
     <Paper
       elevation={6}

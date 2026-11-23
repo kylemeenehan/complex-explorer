@@ -10,6 +10,8 @@
 
 export type Complex = { re: number; im: number };
 
+export type FractalKind = 'mandelbrot' | 'julia';
+
 export type EscapeResult = {
   /** Iterations performed before escape, or maxIter if it never escaped. */
   n: number;

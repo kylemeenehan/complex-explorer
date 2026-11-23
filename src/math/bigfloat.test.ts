@@ -55,6 +55,12 @@ describe('BigFloat', () => {
     expect(BigFloat.from('1e25').toString()).toBe('1e25');
   });
 
+  it('does not print rounding noise from parsed decimals', () => {
+    expect(BigFloat.from('-0.8').toString(100)).toBe('-0.8');
+    expect(BigFloat.from('0.156').toString(60)).toBe('0.156');
+    expect(BigFloat.from('-0.75').toString(100)).toBe('-0.75');
+  });
+
   it('keeps every digit of long decimals', () => {
     const s = '-1.7400623825793399052208441670658488567129696577282e-3';
     const plain = '-0.0017400623825793399052208441670658488567129696577282';

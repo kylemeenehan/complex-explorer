@@ -13,11 +13,11 @@ uniform float uBailout;      // R
 uniform bool uSmooth;
 uniform vec3 uInterior;      // colour for points that never escaped
 
-vec3 colourFor(bool escaped, int n, float mag2) {
+// logZ = ln|z| at escape (passed as a log so huge |z| can't overflow float32).
+vec3 colourFor(bool escaped, int n, float logZ) {
   if (!escaped) return uInterior;
   float nu = float(n);
   if (uSmooth) {
-    float logZ = 0.5 * log(mag2);
     nu += 1.0 - log2(logZ / log(uBailout));
   }
   float t = fract(uOffset + uDensity * nu / 64.0);

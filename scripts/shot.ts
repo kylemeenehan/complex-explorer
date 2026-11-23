@@ -60,9 +60,20 @@ try {
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(base + path);
-  await page.waitForSelector('canvas[data-render-state]');
+  try {
+    await page.waitForSelector('canvas[data-render-state]', {
+      timeout: 15_000,
+    });
+  } catch (e) {
+    console.error('page errors:\n' + errors.join('\n'));
+    throw e;
+  }
+  const alert = page.getByRole('alert');
+  if (await alert.count())
+    throw new Error(`App reported: ${await alert.first().innerText()}`);
   await page.waitForFunction(
     () => {
+      if (document.querySelector('[role="alert"]')) return true;
       const canvases = [
         ...document.querySelectorAll('canvas[data-render-state]'),
       ];
@@ -76,9 +87,11 @@ try {
     null,
     { timeout: 120_000 },
   );
+  if (await alert.count())
+    throw new Error(`App reported: ${await alert.first().innerText()}`);
   await page.waitForTimeout(300);
   const target = element ? page.getByTestId(element) : page;
-  await target.screenshot({ path: out });
+  await target.screenshot({ path: out, timeout: 300_000 });
   console.log(`wrote ${out} (${page.url()})`);
   if (errors.length) console.error('page errors:\n' + errors.join('\n'));
 } finally {

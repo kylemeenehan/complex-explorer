@@ -135,7 +135,7 @@ export function parseState(search: string, base = DEFAULT_STATE): AppState {
     c: parseComplex(q.get('c')) ?? base.c,
     settings: {
       maxIter: typeof maxIter === 'number' ? Math.round(maxIter) : maxIter,
-      bailout: parseNumber(q.get('R'), 2, 1e10) ?? d.bailout,
+      bailout: parseNumber(q.get('R'), 2, 1e8) ?? d.bailout,
       palette: pal && isPaletteId(pal) ? pal : d.palette,
       density: parseNumber(q.get('pd'), 0.001, 1000) ?? d.density,
       offset: parseNumber(q.get('po'), 0, 1) ?? d.offset,

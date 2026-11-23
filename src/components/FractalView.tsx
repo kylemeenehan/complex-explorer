@@ -23,7 +23,12 @@ import {
   type Size,
   type View,
 } from '../math/viewport';
-import { FractalRenderer, type FractalKind } from '../render/FractalRenderer';
+import {
+  FractalRenderer,
+  isDeep,
+  type FractalKind,
+} from '../render/FractalRenderer';
+import type { ReferenceProgress } from '../render/perturbation/ReferenceComputer';
 import { effectiveMaxIter, type Settings } from '../state/app-state';
 import { usePanZoom } from '../interaction/usePanZoom';
 import { drawOverlay, MARKER_RADIUS } from './overlay';
@@ -73,6 +78,11 @@ export function FractalView(props: FractalViewProps) {
   const [error, setError] = useState<string | null>(null);
   const [size, setSize] = useState<Size>({ width: 1, height: 1 });
   const [cursor, setCursor] = useState<BigComplex | null>(null);
+  const [referenceProgress, setReferenceProgress] =
+    useState<ReferenceProgress>(null);
+  const [renderedIterations, setRenderedIterations] = useState<number | null>(
+    null,
+  );
 
   // Latest values for event handlers (which are attached once).
   const latest = useRef({ view, props });
@@ -85,6 +95,8 @@ export function FractalView(props: FractalViewProps) {
     try {
       rendererRef.current = new FractalRenderer(canvas, {
         onError: (e) => setError(e.message),
+        onReferenceProgress: setReferenceProgress,
+        onIterations: setRenderedIterations,
       });
     } catch (e) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off capability failure
@@ -110,6 +122,7 @@ export function FractalView(props: FractalViewProps) {
       view,
       c,
       maxIter,
+      autoIter: settings.maxIter === 'auto',
       bailout: settings.bailout,
       palette: settings.palette,
       density: settings.density,
@@ -271,9 +284,36 @@ export function FractalView(props: FractalViewProps) {
         </div>
         <div style={{ opacity: 0.75 }}>
           zoom {magnification(view)} · r = {view.r.toString(3)} ·{' '}
-          {maxIter.toLocaleString()} iterations
+          {(renderedIterations ?? maxIter).toLocaleString()} iterations
+          {isDeep(view) && ' · perturbation'}
         </div>
       </Box>
+      {referenceProgress && (
+        <Box
+          role="status"
+          data-testid={`${testId}-reference-progress`}
+          sx={{
+            position: 'absolute',
+            left: '50%',
+            top: 8,
+            transform: 'translateX(-50%)',
+            px: 1.5,
+            py: 0.5,
+            borderRadius: 1,
+            bgcolor: 'rgba(0,0,0,0.7)',
+            color: '#fff',
+            font: '12px ui-monospace, Menlo, Consolas, monospace',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Computing high-precision reference orbit…{' '}
+          {Math.round(
+            (100 * referenceProgress.iterations) / referenceProgress.maxIter,
+          )}
+          %
+        </Box>
+      )}
       <Box
         sx={{
           position: 'absolute',

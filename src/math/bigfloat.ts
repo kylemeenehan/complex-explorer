@@ -90,11 +90,12 @@ export class BigFloat {
 
   /**
    * Parse a decimal string such as "-0.75", "1e-40" or "-1.2345678901234567890123e-3".
-   * The result carries at least `minBits` bits of relative precision, and more
-   * if the string has more significant digits than that. Returns null if the
+   * The result carries at least `minBits` bits of relative precision (default
+   * 256, about 77 digits, so short decimals like "-0.8" stay exact well into
+   * deep zoom), and more if the string has more significant digits than that. Returns null if the
    * string is not a number.
    */
-  static parse(s: string, minBits = 64): BigFloat | null {
+  static parse(s: string, minBits = 256): BigFloat | null {
     const match = NUMBER_RE.exec(s);
     if (!match) return null;
     const [, sign, intPart = '', fracPart = '', expPart] = match;
@@ -238,13 +239,17 @@ export class BigFloat {
   }
 
   /**
-   * Decimal representation with `sig` significant digits (trailing zeros
-   * trimmed). Uses plain notation for moderate exponents and scientific
+   * Decimal representation with up to `sig` significant digits (trailing
+   * zeros trimmed, and never more digits than the value's precision holds). Uses plain notation for moderate exponents and scientific
    * notation otherwise, e.g. "-0.75", "1.5e-40".
    */
   toString(sig = 17): string {
     if (this.m === 0n) return '0';
     sig = Math.max(1, Math.floor(sig));
+    // A long mantissa came from rounding (e.g. parsing "0.8"); digits beyond
+    // its precision would just print the rounding error.
+    const len = bitLength(this.m);
+    if (len >= 60) sig = Math.min(sig, Math.floor(len * LOG10_2) - 1);
     const neg = this.m < 0n;
     const a = neg ? -this.m : this.m;
     let k = Math.floor(this.log10());

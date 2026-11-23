@@ -46,5 +46,5 @@ void main() {
       break;
     }
   }
-  outColor = vec4(colourFor(escaped, n, mag2), 1.0);
+  outColor = vec4(colourFor(escaped, n, 0.5 * log(mag2)), 1.0);
 }

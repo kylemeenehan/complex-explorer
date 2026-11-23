@@ -94,6 +94,31 @@ export const PRESETS: Preset[] = [
     apply: mandelbrotSpot('-1.7548776662466927', '0', '0.012'),
   },
   {
+    id: 'deep-seahorse',
+    name: 'Deep zoom: Seahorse spiral at 10²⁵×',
+    description:
+      'Spirals within spirals, 25 orders of magnitude down. Needs ~20,000 iterations.',
+    group: 'Mandelbrot set',
+    page: 'mandelbrot',
+    apply: mandelbrotSpot(
+      '-0.743643887037158704752191506114774',
+      '0.131825904205311970493132056385139',
+      '1e-25',
+    ),
+  },
+  {
+    id: 'deep-dendrite',
+    name: "Tan Lei's theorem: c = i at 10¹⁰⁰×",
+    description:
+      'Near a Misiurewicz point c, M looks like J_c near c (up to rotation and scale) at every scale. Both panes are zoomed 10¹⁰⁰× into i.',
+    group: 'Mandelbrot set',
+    page: 'explore',
+    apply: (s) => ({
+      ...mandelbrotSpot('0', '1', '1e-100')(s),
+      j: makeView('0', '1', '1e-100'),
+    }),
+  },
+  {
     id: 'rabbit',
     name: 'Douady rabbit',
     description:

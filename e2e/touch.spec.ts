@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
+  collapseProbe,
   expectWithinPixels,
   paneBox,
   parseView,
@@ -34,10 +35,7 @@ test('pinch zooms about the midpoint of the fingers', async ({ page }) => {
   await page.goto('/mandelbrot?m=-0.5,0,1.25&orbit=0');
   await waitForRender(page, 'mandelbrot');
   // Collapse the probe card so it doesn't intercept the touches.
-  await page
-    .getByTestId('mandelbrot-probe')
-    .getByRole('button', { name: 'Collapse' })
-    .click();
+  await collapseProbe(page, 'mandelbrot');
   const box = await paneBox(page, 'mandelbrot');
   const size = { width: box.width, height: box.height };
   const mid = { x: box.width / 2 + 20, y: box.height * 0.6 };
@@ -70,10 +68,7 @@ test('pinch zooms about the midpoint of the fingers', async ({ page }) => {
 test('one-finger drag pans', async ({ page }) => {
   await page.goto('/mandelbrot?m=-0.5,0,1.25&orbit=0');
   await waitForRender(page, 'mandelbrot');
-  await page
-    .getByTestId('mandelbrot-probe')
-    .getByRole('button', { name: 'Collapse' })
-    .click();
+  await collapseProbe(page, 'mandelbrot');
   const box = await paneBox(page, 'mandelbrot');
   const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   const frames = Array.from({ length: 11 }, (_, i) => [

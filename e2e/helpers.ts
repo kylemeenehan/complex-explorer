@@ -120,3 +120,11 @@ export function sampleGrid(width: number, height: number, n = 12) {
   }
   return pts;
 }
+
+/** Make sure a pane's probe card is collapsed (it starts collapsed on narrow screens). */
+export async function collapseProbe(page: Page, pane: Pane) {
+  const button = page
+    .getByTestId(`${pane}-probe`)
+    .getByRole('button', { name: 'Collapse' });
+  if (await button.isVisible()) await button.click();
+}

@@ -32,8 +32,11 @@ src/math/        Pure maths, no DOM. Heavily unit-tested.
   bigfloat.ts      Arbitrary-precision binary floats (BigInt mantissa + exponent)
   viewport.ts      Pixel ↔ complex-plane mapping, pan, zoom-about-a-point
   iterate.ts       CPU escape time, orbits, period detection (ground truth for shaders)
+  reference-orbit.ts  Arbitrary-precision reference orbits for perturbation (fixed-point BigInt)
+  perturbation.ts  CPU mirror of the perturbation shader + iteration-count suggestion
 src/render/      WebGL2
-  FractalRenderer.ts  Owns a context; compiles once; draws at most once per animation frame
+  FractalRenderer.ts  Owns a context; chooses direct vs perturbation; progressive tiled rendering
+  perturbation/       Web Worker + ReferenceComputer that compute reference orbits off-thread
   shaders/            GLSL ES 3.00; `#include "name"` chunks resolved by glsl.ts
   palettes.ts         Gradient → 256-texel palette texture
 src/interaction/ gestures.ts (pure GestureController, unit-tested) + usePanZoom.ts (DOM wiring)
@@ -56,6 +59,21 @@ These are load-bearing. Breaking them makes dragging feel "off" again.
 - **Iteration count convention:** `n` is the number of applications of z ↦ z² + c when |z| first exceeds the bailout R. The smooth count is `ν = n + 1 − log₂(ln|z| / ln R)`. `iterate.ts` and `shaders/colour.glsl` must agree.
 - **Rendering is batched.** `FractalRenderer.setParams()` schedules one draw per animation frame. Don't create GL objects per frame. The canvas carries `data-render-state="pending|done"` for tests.
 - In dev builds the canvas exposes `canvas.__fractal.samplePixels([{x, y}])`. The e2e tests use it to read rendered colours.
+
+### Deep zoom (perturbation)
+
+- Views with r < 2e-4 use `shaders/perturb.frag`. A reference orbit at the view centre is computed at arbitrary precision in a worker and uploaded as an RGBA32F texture.
+  - Each pixel iterates δ = z − Z with float32. Below 2⁻⁶⁰ it switches to float-with-exponent ("FE"), so depth is unlimited.
+  - Zhuoran rebasing replaces glitch detection. For Julia sets, orbit A starts at the view centre and orbit B at the critical point 0.
+- **`src/math/perturbation.ts` is the specification.** Change the algorithm there first, keep its tests (against brute-force BigFloat iteration) green, then port to GLSL. `e2e/deep.spec.ts` compares GPU pixels with the CPU mirror.
+- A reference is reused while panning, offset by `uRefOffset`. A new one is requested in the background when the centre moves more than 768 px, or when zooming needs more precision. `referenceUsable` and `plan()` in `FractalRenderer.ts` decide.
+- With `it=auto`, deep views also sample a 12×12 grid of pixel escape times on the CPU, then raise the iteration limit to resolve them (`suggestMaxIter`). Depth alone is a poor guide: Seahorse Valley at 1e-25 needs ~20,000 iterations.
+- float32 deltas drift by tens of iterations over ~10,000 iterations in chaotic filaments. That is a precision limit, not a bug. Emulate float32 on the CPU (`Math.fround`) before chasing a GPU/CPU mismatch.
+- Rendering is progressive:
+  - Tiles go into an offscreen framebuffer, after a quarter-resolution preview when a frame can't finish in one go.
+  - A GPU fence adapts the number of tiles per frame.
+  - `data-render-state="done"` is set only once the final fence signals.
+- Headless tests run WebGL on SwiftShader (the CPU), so deep renders are slow there. Keep deep e2e viewports small (`test.use({ viewport })`).
 
 ### State and URLs
 

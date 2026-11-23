@@ -115,3 +115,21 @@ export function buildPalette(id: PaletteId): Uint8Array {
   }
   return out;
 }
+
+/**
+ * CPU equivalent of the shader's palette lookup (LINEAR filtering, REPEAT
+ * wrapping), for tests and tools.
+ */
+export function samplePalette(
+  data: Uint8Array,
+  t: number,
+): [number, number, number] {
+  const x = (t - Math.floor(t)) * PALETTE_SIZE - 0.5;
+  const i0 = Math.floor(x);
+  const f = x - i0;
+  const a = ((i0 % PALETTE_SIZE) + PALETTE_SIZE) % PALETTE_SIZE;
+  const b = (a + 1) % PALETTE_SIZE;
+  return [0, 1, 2].map((k) =>
+    Math.round(data[a * 4 + k] * (1 - f) + data[b * 4 + k] * f),
+  ) as [number, number, number];
+}

@@ -1,73 +1,35 @@
-# React + TypeScript + Vite
+# Complex Explorer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Explore the Mandelbrot set, Julia sets, and how they are related, in the browser.
 
-Currently, two official plugins are available:
+- **Mandelbrot set**: click any point c to plot the orbit of 0 under z ↦ z² + c, with a plain-language verdict: escapes, converges to an attracting cycle of period p, or stays bounded.
+- **Julia sets**: the filled Julia set for any c, with the critical orbit and the orbit of any point you click.
+- **Side by side**: the parameter plane and the dynamical plane together. Drag c across the Mandelbrot set, or let it follow the cursor, and watch J<sub>c</sub> change.
+- **Navigation**: drag, scroll or pinch, with zoom about the pointer. Also works with the keyboard and on touch screens.
+- **Precise control**: type in the centre, radius, c, iteration limit, bailout radius and colouring.
+- **Sharing**: the address bar always encodes the exact view, so a copied link reproduces it. Images export as PNG at up to 4K.
+- **Places**: curated locations, including Seahorse Valley, the Feigenbaum point, the Douady rabbit, a Siegel disk and Cantor dust.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+All rendering runs on the GPU with WebGL2.
 
-## React Compiler
+## Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Requires Node 24 (see `.nvmrc`) and pnpm.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```sh
+pnpm install
+pnpm exec playwright install chromium   # once, for browser tests
+pnpm dev                                 # http://localhost:5173
+pnpm check                               # lint, typecheck, unit and browser tests
+pnpm shot "/explore?c=-0.12,0.75" shots/rabbit.png   # render a URL to PNG
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+`CLAUDE.md` describes the architecture, conventions and testing approach. It is written for AI coding agents, but is a good map for humans too.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Credits
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+The escape-time algorithms started from the source of [complex-analysis.com](https://complex-analysis.com/).
+
+## Licence
+
+MIT

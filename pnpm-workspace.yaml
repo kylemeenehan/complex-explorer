@@ -1,0 +1,3 @@
+allowBuilds:
+  # Only verifies its platform binary, which pnpm installs as a separate package.
+  esbuild: false

@@ -1,3 +1,5 @@
 {
-  "*": ["eslint", "prettier --ignore-unknown --write"]
+  "*.{ts,tsx,js}": ["eslint --max-warnings=0", "prettier --write"],
+  "*.{ts,tsx}": "vitest related --run",
+  "*.{json,md,css,html,yml}": "prettier --write"
 }
